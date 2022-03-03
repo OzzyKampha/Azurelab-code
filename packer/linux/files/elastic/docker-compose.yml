@@ -1,0 +1,113 @@
+version: "3"
+services:
+  es01:
+   # container_name: es01
+    image: docker.elastic.co/elasticsearch/elasticsearch:$ELK_VERSION
+    environment:
+      - node.name=es01
+      - discovery.seed_hosts=es01,es02
+      - cluster.initial_master_nodes=es01,es02
+      - ELASTIC_PASSWORD=${ELASTIC_PASSWORD} 
+      - "ES_JAVA_OPTS=-Xms${HEAP_SIZE}  -Xmx${HEAP_SIZE} "
+      - xpack.license.self_generated.type=basic 
+      - xpack.security.enabled=true
+      - xpack.security.http.ssl.enabled=true
+      - xpack.security.http.ssl.key=$CERTS_DIR/es01/es01.key
+      - xpack.security.http.ssl.certificate_authorities=$CERTS_DIR/ca/ca.crt
+      - xpack.security.http.ssl.certificate=$CERTS_DIR/es01/es01.crt
+      - xpack.security.transport.ssl.enabled=true
+      - xpack.security.transport.ssl.verification_mode=certificate 
+      - xpack.security.transport.ssl.certificate_authorities=$CERTS_DIR/ca/ca.crt
+      - xpack.security.transport.ssl.certificate=$CERTS_DIR/es01/es01.crt
+      - xpack.security.transport.ssl.key=$CERTS_DIR/es01/es01.key
+    volumes: ['data01:/usr/share/elasticsearch/data', './certs:$CERTS_DIR']
+    ports:
+      - 9200:9200
+    healthcheck:
+      test: curl --cacert $CERTS_DIR/ca/ca.crt -s https://localhost:9200 >/dev/null; if [[ $$? == 52 ]]; then echo 0; else echo 1; fi
+      interval: 30s
+      timeout: 10s
+      retries: 5
+   # deploy:
+    #  resources:
+#
+ #       limits:
+#
+ #         cpus: '2'
+       #   memory: 256M
+    restart: unless-stopped
+
+  es02:
+    container_name: es02
+    image: docker.elastic.co/elasticsearch/elasticsearch:$ELK_VERSION
+    environment:
+      - node.name=es02
+      - discovery.seed_hosts=es01,es02
+      - cluster.initial_master_nodes=es01,es02
+      - ELASTIC_PASSWORD=${ELASTIC_PASSWORD}
+      - "ES_JAVA_OPTS=-Xms${HEAP_SIZE}  -Xmx${HEAP_SIZE} "
+      - xpack.license.self_generated.type=basic
+      - xpack.security.enabled=true
+      - xpack.security.http.ssl.enabled=true
+      - xpack.security.http.ssl.key=$CERTS_DIR/es02/es02.key
+      - xpack.security.http.ssl.certificate_authorities=$CERTS_DIR/ca/ca.crt
+      - xpack.security.http.ssl.certificate=$CERTS_DIR/es02/es02.crt
+      - xpack.security.transport.ssl.enabled=true
+      - xpack.security.transport.ssl.verification_mode=certificate 
+      - xpack.security.transport.ssl.certificate_authorities=$CERTS_DIR/ca/ca.crt
+      - xpack.security.transport.ssl.certificate=$CERTS_DIR/es02/es02.crt
+      - xpack.security.transport.ssl.key=$CERTS_DIR/es02/es02.key
+    volumes: ['data02:/usr/share/elasticsearch/data', './certs:$CERTS_DIR']
+  #  deploy:
+   #   resources:
+#
+ #       limits:
+#
+ #         cpus: '2  '
+    restart: unless-stopped
+ 
+  kibana:
+    hostname: kibana
+    build:
+      context: kibana/
+      args:
+        ELK_VERSION: $ELK_VERSION
+    restart: unless-stopped
+    volumes:
+      - ./kibana/kibana.yml:/usr/share/kibana/config/kibana.yml:ro
+      - ./certs:$CERTS_DIR
+    environment:
+      CONFIG_DIR: /usr/share/kibana/config
+      KIBANA_URL: ${KIBANA_URL}
+      CERTS_DIR: $CERTS_DIR
+      ENCRYPTION_KEY: ${XPACK_ENCRYPTION_KEY}
+      ELASTIC_USERNAME: ${ELASTIC_USERNAME}
+      ELASTIC_PASSWORD: ${ELASTIC_PASSWORD}
+    ports:
+      - "5601:5601"
+    restart: unless-stopped
+ #   deploy:
+#
+  #    replicas: 1
+    
+  elastic-agent:
+    hostname: elastic-agent
+    image: docker.elastic.co/beats/elastic-agent:${ELK_VERSION}
+    restart: always
+    user: root
+    environment:
+      KIBANA_CA: $CERTS_DIR/ca/ca.crt
+      ELASTICSEARCH_HOST: https://es01:9200
+      ELASTICSEARCH_CA: $CERTS_DIR/ca/ca.crt
+      ELASTICSEARCH_HOSTS: https://es01:9200
+      KIBANA_HOST: https://kibana:5601
+      ELASTICSEARCH_USERNAME: ${ELASTIC_USERNAME}
+      ELASTICSEARCH_PASSWORD: ${ELASTIC_PASSWORD}
+      FLEET_SERVER_ENABLE: "1"
+      KIBANA_FLEET_SETUP: "1"
+    
+    ports:
+      - 8220:8220
+    volumes: ['/var/run/docker.sock:/var/run/docker.sock', './certs:$CERTS_DIR']
+    restart: unless-stopped
+volumes: {"data01", "data02", "certs"}

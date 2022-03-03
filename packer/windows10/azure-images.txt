@@ -1,0 +1,1 @@
+az vm image list-skus --location norwayeast --publisher MicrosoftWindowsDesktop --offer Windows-10 --output table

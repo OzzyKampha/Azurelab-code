@@ -1,0 +1,19 @@
+# Install Atomic Red Team (remember to exclude folder in )
+
+IEX (IWR 'https://raw.githubusercontent.com/redcanaryco/invoke-atomicredteam/master/install-atomicredteam.ps1' -UseBasicParsing);
+Install-AtomicRedTeam -getAtomics -Force
+
+
+# Atomic RedTeam Use
+
+# List all tests
+Invoke-AtomicTest All -ShowDetailsBrief
+
+# Example - Service Create
+Invoke-AtomicTest T1543.003 -ShowDetailsBrief
+
+# Example - Execute test
+Invoke-AtomicTest T1543.003 -TestNumbers 2,3
+
+# Cleanup from test (removes created services)
+Invoke-AtomicTest T1543.003 -TestNumbers 2,3 -Cleanup

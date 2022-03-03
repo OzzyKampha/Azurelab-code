@@ -1,0 +1,69 @@
+{
+  "_comment": "This Packer File generated a Windows Server 2016 managed disk image with IIS 8.5 on Azure plus Chocolatey and Putty",
+  "variables": {
+    "client_id": "put here your client id",
+    "client_secret": "put here your client secret",
+    "resource_group_name": "RG-Packer1-Stan",
+    "subscription_id": "put here your Azure Subscription ID",
+    "object_id": "put here your Service Principal Name (SPN) id",
+    "tenant_id": "put here your tenant = Azure AD ID"
+  },
+  "builders": [{
+    "type": "azure-arm",
+
+    "client_id": "{{user `client_id`}}",
+    "client_secret": "{{user `client_secret`}}",
+    "subscription_id": "{{user `subscription_id`}}",
+    "object_id": "{{user `object_id`}}",
+    "tenant_id": "{{user `tenant_id`}}",
+
+    "os_type": "Windows",
+    "image_publisher": "MicrosoftWindowsServer",
+    "image_offer": "WindowsServer",
+    "image_sku": "2016-Datacenter",
+
+    "managed_image_resource_group_name": "RG-Packer1-Stan",
+    "managed_image_name": "win16adminNorthEurope",
+
+    "communicator": "winrm",
+    "winrm_use_ssl": "true",
+    "winrm_insecure": "true",
+    "winrm_timeout": "3m",
+    "winrm_username": "packer",
+
+    "azure_tags": {
+      "madewith": "HashiCorp Packer v1.2.2",
+      "Creator" : "Stan",
+      "Usage" : "Poste Windows 16 Admin outils Azure"
+    },
+
+    "location": "North Europe",
+    "vm_size": "Standard_D4_v2"
+  }],
+  "provisioners": [
+    {
+      "type": "windows-shell",
+        "inline": ["@\"%SystemRoot%\\System32\\WindowsPowerShell\\v1.0\\powershell.exe\" -NoProfile -InputFormat None -ExecutionPolicy Bypass -Command \"iex ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1'))\" && SET \"PATH=%PATH%;%ALLUSERSPROFILE%\\chocolatey\\bin\""]
+    },
+      {
+      "type": "windows-restart",
+      "restart_timeout": "15m"
+    },
+    {
+      "type": "windows-shell",
+        "inline": 
+        [
+          "choco install -y putty.install"
+        ]
+    },
+    {
+      "type": "powershell",
+      "inline": [
+        "Get-ScheduledTask -TaskName ServerManager | Disable-ScheduledTask -Verbose",
+        "Add-WindowsFeature Web-Server",
+        "& $env:SystemRoot\\System32\\Sysprep\\Sysprep.exe /oobe /generalize /quiet /quit",
+        "while($true) { $imageState = Get-ItemProperty HKLM:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Setup\\State | Select ImageState; if($imageState.ImageState -ne 'IMAGE_STATE_GENERALIZE_RESEAL_TO_OOBE') { Write-Output $imageState.ImageState; Start-Sleep -s 10  } else { break } }"
+      ]
+    }
+  ]
+}

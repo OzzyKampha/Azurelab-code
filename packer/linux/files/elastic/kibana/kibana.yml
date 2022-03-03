@@ -1,0 +1,56 @@
+server.name: kibana
+
+server.host: 0.0.0.0
+
+server.publicBaseUrl: "${KIBANA_URL}"
+
+
+# Elasticsearch settings
+
+elasticsearch.hosts: [ "https://es01:9200" ]
+
+elasticsearch.ssl.certificateAuthorities: [ "${CERTS_DIR}/ca/ca.crt" ]
+
+elasticsearch.username: "${ELASTIC_USERNAME}"
+
+elasticsearch.password: "${ELASTIC_PASSWORD}"
+
+
+# Elasticsearch monitoring settings
+
+monitoring.ui.container.elasticsearch.enabled: true
+
+
+# X-Pack Security
+
+xpack.security.enabled: true
+
+xpack.encryptedSavedObjects.encryptionKey: "${ENCRYPTION_KEY}"
+
+xpack.security.encryptionKey: "${ENCRYPTION_KEY}"
+
+xpack.reporting.encryptionKey: "${ENCRYPTION_KEY}"
+
+
+# SSL settings
+
+
+server.ssl.enabled: true
+
+server.ssl.certificate: "${CERTS_DIR}/kibana/kibana.crt"
+
+server.ssl.key: "${CERTS_DIR}/kibana/kibana.key"
+
+server.ssl.certificateAuthorities: [ "${CERTS_DIR}/ca/ca.crt" ]
+
+ #  server.ssl.certificate: $CERTS_DIR/kibana/kibana.crt
+
+     # server.ssl.key: $CERTS_DIR/kibana/kibana.key
+
+     # server.ssl.certificateAuthorities: $CERTS_DIR/ca/ca.crt
+
+
+# Fleet settings
+
+xpack.fleet.agents.elasticsearch.host: "https://10.0.2.20:9200"
+xpack.fleet.agents.fleet_server.hosts: ["https://10.0.2.20:8220"]

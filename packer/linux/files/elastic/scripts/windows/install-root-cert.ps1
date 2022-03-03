@@ -1,0 +1,1 @@
+certutil.exe -addstore root c:\opt\certs\ca\ca.crt
