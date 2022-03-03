@@ -1,0 +1,9 @@
+*.tfplan
+*.tfstate
+*.tfstate.backup
+*.terraform.lock.hcl
+*.tfvars
+.terraform/
+.ssh/
+id_rsa
+id_rsa.pub
